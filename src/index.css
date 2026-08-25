@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #14140F;
+  --surface: #1F1E17;
+  --surface-elevated: #26251D;
+  --surface-sunken: #181712;
+  --border: #3A3830;
+  --text-primary: #EDE8DD;
+  --text-secondary: #8C897C;
+  --accent-primary: #4A6741;
+  --accent-data: #C98A3D;
+  --accent-water: #34445C;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Scientific record styling */
+  h1, h2, h3, h4 {
+    font-family: 'Roboto Slab', Georgia, serif;
+  }
+
+  /* All numbers strictly monospace */
+  .font-numeric,
+  .tabular-nums {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Subtle hairline scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #14140F;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3A3830;
+    border-radius: 2px;
+  }
+}
+
+/* Field Record Cards & Hairlines */
+.field-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.field-input {
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 2px;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.field-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
