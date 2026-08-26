@@ -1,4 +1,4 @@
-# Logs
+# Logs and debugging
 logs
 *.log
 npm-debug.log*
@@ -7,22 +7,42 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Node dependencies
+node_modules/
+dist/
+dist-ssr/
 *.local
 
-# Editor directories and files
+# Environment variables & secrets (keep .env.example tracked)
+.env
+.env*.local
+!.env.example
+
+# Editor and OS files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Agent & Temp
-.agents
-.gemini
+# Unity editor caches (if Unity project is adjacent)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Mm]emoryCaptures/
+/[Aa]rchives/
+
+# Explicitly ensure WebGL assets in public are tracked
+!public/unitybuild/
+!public/unitybuild/**
+
+# Agent & workspace artifacts
+.agents/
+.gemini/
