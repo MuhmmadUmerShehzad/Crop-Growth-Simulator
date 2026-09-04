@@ -4,29 +4,39 @@ import { RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '../common/Toast';
 
 interface UnityContainerProps {
-  growthScale: number;
+  growthScale: number | null;
+  predictedYieldMaundAcre?: number | null;
 }
 
-export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale }) => {
+export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale, predictedYieldMaundAcre }) => {
   const { showToast } = useToast();
 
   const { unityProvider, sendMessage, isLoaded, loadingProgression } = useUnityContext({
     loaderUrl: '/unitybuild/Build.loader.js',
-    dataUrl: '/unitybuild/Build.data',
-    frameworkUrl: '/unitybuild/Build.framework.js',
-    codeUrl: '/unitybuild/Build.wasm',
+    dataUrl: '/unitybuild/Build.data.unityweb',
+    frameworkUrl: '/unitybuild/Build.framework.js.unityweb',
+    codeUrl: '/unitybuild/Build.wasm.unityweb',
   });
 
-  // Automatically update Unity object whenever growthScale changes and scene is loaded
+  // ONLY send message to Unity when a simulation has actually been run (growthScale is not null)
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && growthScale !== null) {
       try {
         sendMessage('SimulationController', 'ReceiveGrowthScale', growthScale);
       } catch (err) {
         console.error('Failed to send growth scale to Unity:', err);
       }
+
+      // If Unity SimulationController defines a Spawn / Yield method, pass the predicted_yield_maund_acre float
+      if (typeof predictedYieldMaundAcre === 'number') {
+        try {
+          sendMessage('SimulationController', 'Spawn', predictedYieldMaundAcre);
+        } catch {
+          // Graceful fallback if Spawn is not registered
+        }
+      }
     }
-  }, [growthScale, isLoaded, sendMessage]);
+  }, [growthScale, predictedYieldMaundAcre, isLoaded, sendMessage]);
 
   const handleManualSync = () => {
     if (!isLoaded) {
@@ -37,10 +47,11 @@ export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale }) =
       });
       return;
     }
-    sendMessage('SimulationController', 'ReceiveGrowthScale', growthScale);
+    const scaleToSend = growthScale ?? 0.5;
+    sendMessage('SimulationController', 'ReceiveGrowthScale', scaleToSend);
     showToast({
       title: 'Sync Sent to Unity',
-      description: `Growth Scale ${(growthScale * 100).toFixed(0)}% dispatched to SimulationController`,
+      description: `Growth Scale ${(scaleToSend * 100).toFixed(0)}% dispatched to SimulationController`,
       type: 'success',
     });
   };
@@ -82,7 +93,7 @@ export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale }) =
     };
   };
 
-  const stage = getGrowthStageData(growthScale);
+  const stage = getGrowthStageData(growthScale ?? 0.15);
 
   return (
     <div className="relative w-full h-full min-h-[560px] overflow-hidden bg-[#14140F] flex flex-col items-center justify-center">
@@ -109,19 +120,55 @@ export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale }) =
             )}
           </span>
           <span className="text-[#C98A3D] text-xs sm:text-sm font-semibold">
-            {(growthScale * 100).toFixed(0)}% SCALE
+            {growthScale !== null ? `${(growthScale * 100).toFixed(0)}% SCALE` : 'IDLE / PENDING'}
           </span>
         </div>
 
         <div className="flex items-center border border-[#3A3830] bg-[#14140F]/90 divide-x divide-[#3A3830]">
           <button
             type="button"
+            onClick={() => {
+              if (isLoaded) {
+                sendMessage('SimulationController', 'ReceiveGrowthScale', 0.85);
+                showToast({
+                  title: 'Dispatched Healthy Yield (0.85)',
+                  description: 'Triggered rice_healthy growth animation across farm markers',
+                  type: 'success',
+                  duration: 2500,
+                });
+              }
+            }}
+            className="px-2.5 py-1.5 text-xs text-[#8C897C] hover:text-[#4A6741] hover:bg-[#1F1E17] transition-colors cursor-pointer"
+            title="Simulate High Yield (rice_healthy)"
+          >
+            Healthy (0.85)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (isLoaded) {
+                sendMessage('SimulationController', 'ReceiveGrowthScale', 0.25);
+                showToast({
+                  title: 'Dispatched Stunted Yield (0.25)',
+                  description: 'Triggered rice_stunted growth animation across farm markers',
+                  type: 'info',
+                  duration: 2500,
+                });
+              }
+            }}
+            className="px-2.5 py-1.5 text-xs text-[#8C897C] hover:text-[#C98A3D] hover:bg-[#1F1E17] transition-colors cursor-pointer"
+            title="Simulate Low Yield (rice_stunted)"
+          >
+            Stunted (0.25)
+          </button>
+          <button
+            type="button"
             onClick={handleManualSync}
-            className="px-3 py-1.5 text-xs sm:text-sm text-[#8C897C] hover:text-[#EDE8DD] transition-colors cursor-pointer flex items-center gap-1.5"
-            title="Dispatch growth scale to Unity"
+            className="px-2.5 py-1.5 text-xs text-[#8C897C] hover:text-[#EDE8DD] transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Re-send current predicted scale to Unity"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${!isLoaded ? 'opacity-50' : ''}`} />
-            <span>Sync Unity</span>
+            <span>Sync</span>
           </button>
         </div>
       </div>

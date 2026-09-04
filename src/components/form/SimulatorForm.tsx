@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { PredictionInputs } from '../../types/prediction';
 import { useToast } from '../common/Toast';
 import {
@@ -24,13 +25,44 @@ interface VarietyMeta {
   grainType: string;
 }
 
-const RICE_VARIETIES: VarietyMeta[] = [
-  { value: 'Super Basmati', name: 'Super Basmati', category: 'Fine Aromatic', durationDays: '115-120', grainType: 'Extra Long Fine' },
-  { value: 'Basmati-515', name: 'Basmati-515', category: 'Export Grade', durationDays: '110-115', grainType: 'High Head Recovery' },
-  { value: 'IRRI-6', name: 'IRRI-6', category: 'Coarse Hybrid', durationDays: '125-130', grainType: 'High Biomass' },
-  { value: 'KS-282', name: 'KS-282', category: 'Stress Tolerant', durationDays: '120-125', grainType: 'High Nitrogen Response' },
-  { value: 'PK-386', name: 'PK-386', category: 'Commercial Non-Basmati', durationDays: '105-110', grainType: 'Medium Slender' },
-];
+const CROP_VARIETIES: Record<string, VarietyMeta[]> = {
+  'Wheat': [
+    { value: 'Faisalabad-2008 / Inqilab', name: 'Faisalabad-2008 / Inqilab', category: 'High Rust Resistance', durationDays: '120-130', grainType: 'Amber Semi-Hard' },
+    { value: 'Galaxy-2013', name: 'Galaxy-2013', category: 'High Tillering', durationDays: '125-135', grainType: 'Bold White' },
+    { value: 'Akbar-2019', name: 'Akbar-2019', category: 'High Yield Climate Resilient', durationDays: '115-125', grainType: 'White Hard' },
+    { value: 'Dilkash-2020', name: 'Dilkash-2020', category: 'Heat Tolerant', durationDays: '120-128', grainType: 'Medium Hard' },
+    { value: 'Ufaq-2022', name: 'Ufaq-2022', category: 'Early Maturing', durationDays: '110-118', grainType: 'Dense Grain' },
+  ],
+  'Gram': [
+    { value: 'Bittal-98', name: 'Bittal-98', category: 'Desi Gram', durationDays: '140-150', grainType: 'Brown Angular' },
+    { value: 'Punjab-2008', name: 'Punjab-2008', category: 'Wilt Resistant', durationDays: '135-145', grainType: 'Medium Desi' },
+    { value: 'Noor-2009', name: 'Noor-2009', category: 'Kabuli High Yield', durationDays: '140-150', grainType: 'Bold White Kabuli' },
+    { value: 'Bhakkar-2011', name: 'Bhakkar-2011', category: 'Drought Tolerant', durationDays: '130-140', grainType: 'Desi Brown' },
+    { value: 'NIAB-CH-2016', name: 'NIAB-CH-2016', category: 'Blight Resistant', durationDays: '135-142', grainType: 'Semi-Kabuli' },
+  ],
+  'Maize (Autumn)': [
+    { value: 'Pioneer 30Y87', name: 'Pioneer 30Y87', category: 'Commercial Hybrid', durationDays: '100-110', grainType: 'Yellow Dent' },
+    { value: 'DK-6789 Hybrid', name: 'DK-6789 Hybrid', category: 'High Kernel Weight', durationDays: '105-115', grainType: 'Flint-Dent' },
+    { value: 'Monsanto 8441', name: 'Monsanto 8441', category: 'Heat Resilient Hybrid', durationDays: '95-105', grainType: 'Deep Orange' },
+    { value: 'Sultan White', name: 'Sultan White', category: 'Open Pollinated', durationDays: '90-100', grainType: 'White Flint' },
+  ],
+  'Rapeseed & Mustard': [
+    { value: 'Khanpur Raya', name: 'Khanpur Raya', category: 'High Oil Raya', durationDays: '130-140', grainType: 'Bold Brown Seed' },
+    { value: 'Super Canola', name: 'Super Canola', category: 'Low Erucic Acid', durationDays: '120-130', grainType: 'High Oleic Canola' },
+    { value: 'Rohi Sarson', name: 'Rohi Sarson', category: 'Drought Tolerant Mustard', durationDays: '110-120', grainType: 'Small Dark Seed' },
+    { value: 'Faisal Canola', name: 'Faisal Canola', category: 'High Biomass Canola', durationDays: '125-135', grainType: 'Medium Seed' },
+  ],
+  'Jowar': [
+    { value: 'JS-2002', name: 'JS-2002', category: 'Sweet Stem Sorghum', durationDays: '95-105', grainType: 'High Sucrose Forage' },
+    { value: 'Hegari Jowar', name: 'Hegari Jowar', category: 'Dual Purpose Grain/Fodder', durationDays: '90-100', grainType: 'White Chalky Grain' },
+    { value: 'JS-263', name: 'JS-263', category: 'High Dry Matter', durationDays: '100-110', grainType: 'Cream White' },
+  ],
+  'Sugarcane': [
+    { value: 'CPF-249 High Sucrose', name: 'CPF-249 High Sucrose', category: 'High Sugar Recovery', durationDays: '330-360', grainType: 'Dense Thick Stalk' },
+    { value: 'HSF-240 Standard', name: 'HSF-240 Standard', category: 'Frost Tolerant Commercial', durationDays: '340-360', grainType: 'High Cane Yield' },
+    { value: 'CPF-252 Early', name: 'CPF-252 Early', category: 'Early Maturing Sucrose', durationDays: '300-330', grainType: 'Medium Heavy Cane' },
+  ],
+};
 
 interface FertilizerMeta {
   n: number;
@@ -40,44 +72,12 @@ interface FertilizerMeta {
 }
 
 const FERTILIZER_DATA: Record<string, FertilizerMeta> = {
-  'NPK 15-15-15 Balanced': { n: 33, p: 33, k: 34, formula: 'Balanced NPK (15-15-15)' },
-  'Urea + DAP Standard': { n: 60, p: 35, k: 5, formula: 'High Nitrogen (Urea+DAP)' },
-  'SOP Enhanced Potash': { n: 25, p: 25, k: 50, formula: 'Potash Heavy (SOP)' },
-  'Zinc Fortified Urea Blend': { n: 55, p: 25, k: 20, formula: 'Zinc Fortified Blend' },
+  'Balanced NPK (15-15-15)': { n: 33, p: 33, k: 34, formula: 'Balanced NPK (15-15-15)' },
+  'High Nitrogen (Urea + DAP)': { n: 60, p: 35, k: 5, formula: 'High Nitrogen (Urea + DAP)' },
+  'Potash Heavy (SOP + Urea)': { n: 25, p: 25, k: 50, formula: 'Potash Heavy (SOP + Urea)' },
+  'Zinc Fortified Blend': { n: 55, p: 25, k: 20, formula: 'Zinc Fortified Blend' },
+  'No Fertilizer (Control)': { n: 0, p: 0, k: 0, formula: 'No Fertilizer (Control)' },
 };
-
-const PRESETS = [
-  {
-    label: 'Rice / Super Basmati',
-    inputs: {
-      crop_type: 'Rice',
-      crop_variety: 'Super Basmati',
-      district: 'Gujranwala',
-      fertilizer_type: 'NPK 15-15-15 Balanced',
-      planting_date: '2026-06-15',
-    },
-  },
-  {
-    label: 'Wheat / Inqilab',
-    inputs: {
-      crop_type: 'Wheat',
-      crop_variety: 'Faisalabad-2008 / Inqilab',
-      district: 'Faisalabad',
-      fertilizer_type: 'Urea + DAP Standard',
-      planting_date: '2026-11-10',
-    },
-  },
-  {
-    label: 'Cotton / Bt Hybrid',
-    inputs: {
-      crop_type: 'Cotton',
-      crop_variety: 'Bt Hybrid Specimen',
-      district: 'Multan',
-      fertilizer_type: 'Zinc Fortified Urea Blend',
-      planting_date: '2026-05-15',
-    },
-  },
-];
 
 export const SimulatorForm: React.FC<SimulatorFormProps> = ({
   inputs,
@@ -87,11 +87,11 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
 }) => {
   const { showToast } = useToast();
 
-  const selectedCrop = inputs.crop_type || 'Rice';
+  const selectedCrop = inputs.crop_type || 'Wheat';
 
   // Filter districts strictly to places where this crop is grown in the Punjab CSV dataset
   const availableDistricts = useMemo(() => {
-    return CROP_DISTRICT_MAP[selectedCrop] || CROP_DISTRICT_MAP['Rice'] || [];
+    return CROP_DISTRICT_MAP[selectedCrop] || CROP_DISTRICT_MAP['Wheat'] || [];
   }, [selectedCrop]);
 
   // Handle Crop change with dynamic district validation
@@ -104,7 +104,7 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
       updatedDistrict = validDistricts[0];
     }
 
-    const defaultVariety = newCrop === 'Rice' ? 'Super Basmati' : `${newCrop} Standard Cultivar`;
+    const defaultVariety = CROP_VARIETIES[newCrop]?.[0]?.value || 'Standard Cultivar';
 
     onChange({
       ...inputs,
@@ -125,23 +125,13 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
     onChange({ ...inputs, [field]: value });
   };
 
-  const applyPreset = (presetInputs: PredictionInputs, label: string) => {
-    onChange(presetInputs);
-    showToast({
-      title: 'Preset applied',
-      description: `${label} (${presetInputs.district} district)`,
-      type: 'success',
-      duration: 3000,
-    });
-  };
-
   const handleReset = () => {
     onChange({
-      crop_type: 'Rice',
-      crop_variety: 'Super Basmati',
-      district: 'Gujranwala',
-      fertilizer_type: 'NPK 15-15-15 Balanced',
-      planting_date: '2026-06-15',
+      crop_type: 'Wheat',
+      crop_variety: 'Faisalabad-2008 / Inqilab',
+      district: 'Faisalabad',
+      fertilizer_type: 'Balanced NPK (15-15-15)',
+      planting_date: '2025-11-15',
     });
     showToast({
       title: 'Parameters reset',
@@ -156,47 +146,38 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
     onSubmit();
   };
 
-  const currentClimate = DISTRICT_CLIMATE[inputs.district] || DISTRICT_CLIMATE['Gujranwala'];
-  const currentFertilizer = FERTILIZER_DATA[inputs.fertilizer_type] || FERTILIZER_DATA['NPK 15-15-15 Balanced'];
-  const cropMeta = CROP_METADATA[selectedCrop] || CROP_METADATA['Rice'];
-  const historicalBaseline = CROP_DISTRICT_AVG_YIELD[`${selectedCrop}:::${inputs.district}`] || cropMeta?.avgYieldTonnes || 3.6;
+  const currentClimate = DISTRICT_CLIMATE[inputs.district] || DISTRICT_CLIMATE['Faisalabad'] || DISTRICT_CLIMATE['Gujranwala'];
+  const currentFertilizer = FERTILIZER_DATA[inputs.fertilizer_type] || FERTILIZER_DATA['Balanced NPK (15-15-15)'];
+  const cropMeta = CROP_METADATA[selectedCrop] || CROP_METADATA['Wheat'];
+  const historicalBaseline = CROP_DISTRICT_AVG_YIELD[`${selectedCrop}:::${inputs.district}`] || cropMeta?.avgYieldTonnes || 3.13;
+
+  const currentVarieties = CROP_VARIETIES[selectedCrop] || [
+    { value: inputs.crop_variety, name: inputs.crop_variety, category: 'Standard', durationDays: '120', grainType: 'Standard' }
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-6">
-      {/* Form Top Metadata & Presets */}
-      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3.5 pb-4 border-b border-[#3A3830]">
+      {/* Form Top Header & Reset */}
+      <div className="flex items-start justify-between gap-4 pb-4 border-b border-[#3A3830]">
         <div>
           <h2 className="text-sm sm:text-base font-mono font-semibold text-[#EDE8DD] uppercase tracking-wider">
             [Field Ledger &bull; Specimen Entry]
           </h2>
-          <p className="text-xs sm:text-sm text-[#8C897C] font-sans mt-1">
-            Ground-truth crop survey &bull; 50 Punjab crops dynamically linked to verified districts.
+          <p className="text-xs text-[#8C897C] font-sans mt-0.5">
+            Ground-truth Punjab survey &bull; 6 verified model crop baselines
           </p>
         </div>
 
-        {/* Presets & Reset */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono text-[#8C897C] uppercase mr-1">Presets:</span>
-          {PRESETS.map((p, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => applyPreset(p.inputs, p.label)}
-              className="text-xs sm:text-sm font-mono px-3 py-1 rounded-[2px] bg-[#181712] hover:bg-[#26251D] border border-[#3A3830] text-[#EDE8DD] hover:text-[#C98A3D] transition-colors cursor-pointer"
-            >
-              {p.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={handleReset}
-            disabled={isLoading}
-            className="text-xs sm:text-sm font-mono px-3 py-1 rounded-[2px] bg-[#181712] hover:bg-[#26251D] border border-[#3A3830] text-[#8C897C] hover:text-[#EDE8DD] transition-colors cursor-pointer ml-1"
-            title="Reset to Baseline"
-          >
-            Reset
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={isLoading}
+          className="text-xs font-mono px-2.5 py-1 rounded-[2px] bg-[#181712] hover:bg-[#26251D] border border-[#3A3830] hover:border-[#8C897C] text-[#8C897C] hover:text-[#EDE8DD] transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+          title="Reset parameters to baseline"
+        >
+          <RotateCcw className="w-3 h-3 text-[#8C897C]" />
+          <span>Reset</span>
+        </button>
       </div>
 
       {/* Ledger Input Rows */}
@@ -232,7 +213,7 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
                   const distCount = CROP_DISTRICT_MAP[cropName]?.length || 0;
                   return (
                     <option key={cropName} value={cropName} className="bg-[#181712] text-[#EDE8DD] font-mono">
-                      {cropName} &bull; {meta?.season || 'Kharif'} ({distCount} districts)
+                      {cropName} &bull; {meta?.season || 'Season'} ({distCount} districts)
                     </option>
                   );
                 })}
@@ -240,26 +221,25 @@ export const SimulatorForm: React.FC<SimulatorFormProps> = ({
             </div>
           </div>
 
-          {/* Sub-variety row if Rice is selected */}
-          {selectedCrop === 'Rice' && (
-            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#14140F]/60 p-2.5 rounded-[2px] border border-[#3A3830]">
-              <div className="text-xs sm:text-sm font-sans text-[#8C897C]">
-                <span>Rice variety / cultivar</span>
-              </div>
-              <select
-                value={inputs.crop_variety}
-                onChange={(e) => handleChange('crop_variety', e.target.value)}
-                disabled={isLoading}
-                className="w-full sm:w-64 bg-[#181712] border border-[#3A3830] text-[#EDE8DD] rounded-[2px] px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-[#4A6741] transition-colors cursor-pointer"
-              >
-                {RICE_VARIETIES.map((v) => (
-                  <option key={v.value} value={v.value} className="bg-[#181712] text-[#EDE8DD] font-mono">
-                    {v.name} &bull; {v.durationDays}d ({v.category})
-                  </option>
-                ))}
-              </select>
+          {/* Cultivar / Variety Row for selected crop */}
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#14140F]/60 p-2.5 rounded-[2px] border border-[#3A3830]">
+            <div className="text-xs sm:text-sm font-sans text-[#8C897C]">
+              <span>Cultivar / variety</span>
+              <span className="text-[11px] font-mono text-[#8C897C] ml-1.5">(descriptor)</span>
             </div>
-          )}
+            <select
+              value={inputs.crop_variety}
+              onChange={(e) => handleChange('crop_variety', e.target.value)}
+              disabled={isLoading}
+              className="w-full sm:w-64 bg-[#181712] border border-[#3A3830] text-[#EDE8DD] rounded-[2px] px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-[#4A6741] transition-colors cursor-pointer"
+            >
+              {currentVarieties.map((v) => (
+                <option key={v.value} value={v.value} className="bg-[#181712] text-[#EDE8DD] font-mono">
+                  {v.name} &bull; {v.durationDays}d
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Row 02: Location / District (Filtered to places where selected crop is grown) */}

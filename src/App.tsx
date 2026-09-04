@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Header } from './components/common/Header';
 import { SimulatorForm } from './components/form/SimulatorForm';
 import { ResultsDashboard } from './components/results/ResultsDashboard';
@@ -9,18 +9,18 @@ import { getYieldPrediction } from './api/predictService';
 import { ToastProvider, useToast } from './components/common/Toast';
 
 const DEFAULT_INPUTS: PredictionInputs = {
-  crop_type: 'Rice',
-  crop_variety: 'Super Basmati',
-  district: 'Gujranwala',
-  fertilizer_type: 'NPK 15-15-15 Balanced',
-  planting_date: '2026-06-15',
+  crop_type: 'Wheat',
+  crop_variety: 'Faisalabad-2008 / Inqilab',
+  district: 'Faisalabad',
+  fertilizer_type: 'Balanced NPK (15-15-15)',
+  planting_date: '2025-11-15',
 };
 
 function SimulatorApp() {
   const { showToast } = useToast();
   const [inputs, setInputs] = useState<PredictionInputs>(DEFAULT_INPUTS);
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
-  const [growthScale, setGrowthScale] = useState<number>(0.75);
+  const [growthScale, setGrowthScale] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [engineMode, setEngineMode] = useState<'unity' | 'three'>('unity');
@@ -48,14 +48,12 @@ function SimulatorApp() {
         setGrowthScale(response.growth_scale);
       }
 
-      if (!isInitial) {
-        showToast({
-          title: 'Simulation complete',
-          description: `Projected yield: ${response.predicted_yield.toFixed(2)} t/ha (${response.percent_increase >= 0 ? '+' : ''}${response.percent_increase.toFixed(1)}%)`,
-          type: 'success',
-          duration: 4000,
-        });
-      }
+      showToast({
+        title: 'Simulation complete',
+        description: `Predicted: ${response.predicted_yield_maund_acre.toFixed(1)} maund/acre (${response.predicted_yield.toFixed(2)} t/ha) [${response.yield_vs_benchmark_pct >= 0 ? '+' : ''}${response.yield_vs_benchmark_pct.toFixed(1)}%]`,
+        type: 'success',
+        duration: 4000,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An unexpected calculation error occurred.';
       setError(msg);
@@ -95,11 +93,6 @@ function SimulatorApp() {
       duration: 3500,
     });
   };
-
-  // Initial calculation on mount
-  useEffect(() => {
-    handleSimulate(DEFAULT_INPUTS, true);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#14140F] text-[#EDE8DD] flex flex-col font-sans">
@@ -161,9 +154,12 @@ function SimulatorApp() {
 
             <div className="flex-1 flex flex-col min-h-0 relative">
               {engineMode === 'unity' ? (
-                <UnityContainer growthScale={growthScale} />
+                <UnityContainer
+                  growthScale={growthScale}
+                  predictedYieldMaundAcre={prediction?.predicted_yield_maund_acre ?? null}
+                />
               ) : (
-                <CanvasContainer growthScale={growthScale} />
+                <CanvasContainer growthScale={growthScale ?? 0.75} />
               )}
             </div>
           </div>
