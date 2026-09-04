@@ -134,7 +134,7 @@ function SimulatorApp() {
       {/* Footer Log Note */}
       <footer className="w-full border-t border-[#3A3830] bg-[#14140F] py-4 px-4 text-xs sm:text-sm font-mono text-[#8C897C]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Rice Yield Growth Simulator &bull; Specimen Survey Console</span>
+          <span>Crop Yield Simulator &bull; Specimen Survey Console</span>
           <span className="text-[#C98A3D]">Continuous Station Frame</span>
         </div>
       </footer>

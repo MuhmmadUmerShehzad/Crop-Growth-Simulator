@@ -15,12 +15,12 @@ export const Header: React.FC<HeaderProps> = ({ onExportReport }) => {
         <div className="flex items-center gap-3.5">
           {/* Small square monogram mark */}
           <div className="w-7 h-7 border border-[#3A3830] flex items-center justify-center text-xs font-mono font-medium text-[#EDE8DD] rounded-[2px] bg-transparent select-none">
-            RY
+            CY
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3.5">
             <h1 className="text-base sm:text-lg font-slab font-semibold text-[#EDE8DD] tracking-tight leading-none">
-              Rice Yield Growth Simulator
+              Crop Yield Simulator
             </h1>
             <span className="text-xs font-mono uppercase tracking-wider text-[#8C897C] mt-1 sm:mt-0">
               {isMock ? 'mock data · 700ms latency' : 'fastapi railway backend · live'}
