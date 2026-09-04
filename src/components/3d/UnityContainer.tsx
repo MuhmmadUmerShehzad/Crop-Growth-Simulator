@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Unity, useUnityContext } from 'react-unity-webgl';
-import { RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
-import { useToast } from '../common/Toast';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface UnityContainerProps {
   growthScale: number | null;
@@ -9,7 +8,6 @@ interface UnityContainerProps {
 }
 
 export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale, predictedYieldMaundAcre }) => {
-  const { showToast } = useToast();
 
   const { unityProvider, sendMessage, isLoaded, loadingProgression } = useUnityContext({
     loaderUrl: '/unitybuild/Build.loader.js',
@@ -37,24 +35,6 @@ export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale, pre
       }
     }
   }, [growthScale, predictedYieldMaundAcre, isLoaded, sendMessage]);
-
-  const handleManualSync = () => {
-    if (!isLoaded) {
-      showToast({
-        title: 'Unity Engine Initializing',
-        description: 'Please wait for the WebGL runtime to finish loading.',
-        type: 'info',
-      });
-      return;
-    }
-    const scaleToSend = growthScale ?? 0.5;
-    sendMessage('SimulationController', 'ReceiveGrowthScale', scaleToSend);
-    showToast({
-      title: 'Sync Sent to Unity',
-      description: `Growth Scale ${(scaleToSend * 100).toFixed(0)}% dispatched to SimulationController`,
-      type: 'success',
-    });
-  };
 
   const getGrowthStageData = (scale: number) => {
     if (scale < 0.35) {
@@ -103,9 +83,9 @@ export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale, pre
       <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-[#C98A3D] pointer-events-none z-20 select-none" />
       <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-[#C98A3D] pointer-events-none z-20 select-none" />
 
-      {/* 2. Top Bar Controls */}
-      <div className="absolute top-4 left-6 right-6 z-10 flex items-center justify-between font-mono">
-        <div className="text-[#8C897C] flex items-center gap-2.5 select-none">
+      {/* 2. Top Bar Status */}
+      <div className="absolute top-4 left-6 right-6 z-10 flex items-center justify-between font-mono pointer-events-none">
+        <div className="text-[#8C897C] flex items-center gap-2.5 select-none bg-[#14140F]/85 border border-[#3A3830] px-3 py-1.5 rounded-[2px] shadow-sm">
           <span className="uppercase text-xs sm:text-sm tracking-wider text-[#EDE8DD] font-semibold flex items-center gap-1.5">
             {isLoaded ? (
               <>
@@ -122,54 +102,6 @@ export const UnityContainer: React.FC<UnityContainerProps> = ({ growthScale, pre
           <span className="text-[#C98A3D] text-xs sm:text-sm font-semibold">
             {growthScale !== null ? `${(growthScale * 100).toFixed(0)}% SCALE` : 'IDLE / PENDING'}
           </span>
-        </div>
-
-        <div className="flex items-center border border-[#3A3830] bg-[#14140F]/90 divide-x divide-[#3A3830]">
-          <button
-            type="button"
-            onClick={() => {
-              if (isLoaded) {
-                sendMessage('SimulationController', 'ReceiveGrowthScale', 0.85);
-                showToast({
-                  title: 'Dispatched Healthy Yield (0.85)',
-                  description: 'Triggered rice_healthy growth animation across farm markers',
-                  type: 'success',
-                  duration: 2500,
-                });
-              }
-            }}
-            className="px-2.5 py-1.5 text-xs text-[#8C897C] hover:text-[#4A6741] hover:bg-[#1F1E17] transition-colors cursor-pointer"
-            title="Simulate High Yield (rice_healthy)"
-          >
-            Healthy (0.85)
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (isLoaded) {
-                sendMessage('SimulationController', 'ReceiveGrowthScale', 0.25);
-                showToast({
-                  title: 'Dispatched Stunted Yield (0.25)',
-                  description: 'Triggered rice_stunted growth animation across farm markers',
-                  type: 'info',
-                  duration: 2500,
-                });
-              }
-            }}
-            className="px-2.5 py-1.5 text-xs text-[#8C897C] hover:text-[#C98A3D] hover:bg-[#1F1E17] transition-colors cursor-pointer"
-            title="Simulate Low Yield (rice_stunted)"
-          >
-            Stunted (0.25)
-          </button>
-          <button
-            type="button"
-            onClick={handleManualSync}
-            className="px-2.5 py-1.5 text-xs text-[#8C897C] hover:text-[#EDE8DD] transition-colors cursor-pointer flex items-center gap-1.5"
-            title="Re-send current predicted scale to Unity"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${!isLoaded ? 'opacity-50' : ''}`} />
-            <span>Sync</span>
-          </button>
         </div>
       </div>
 

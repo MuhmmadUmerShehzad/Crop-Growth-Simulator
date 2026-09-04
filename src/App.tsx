@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { Header } from './components/common/Header';
 import { SimulatorForm } from './components/form/SimulatorForm';
 import { ResultsDashboard } from './components/results/ResultsDashboard';
-import { CanvasContainer } from './components/3d/CanvasContainer';
 import { UnityContainer } from './components/3d/UnityContainer';
 import { PredictionInputs, PredictionResponse } from './types/prediction';
 import { getYieldPrediction } from './api/predictService';
@@ -23,7 +22,6 @@ function SimulatorApp() {
   const [growthScale, setGrowthScale] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [engineMode, setEngineMode] = useState<'unity' | 'three'>('unity');
 
   // Trigger prediction request
   const handleSimulate = useCallback(async (customInputs?: PredictionInputs, isInitial = false) => {
@@ -121,46 +119,13 @@ function SimulatorApp() {
             />
           </div>
 
-          {/* Right Panel: 3D Plant Growth Viewport */}
+          {/* Right Panel: 3D Plant Growth Viewport (Unity WebGL) */}
           <div className="lg:col-span-5 bg-[#14140F] flex flex-col min-h-0 relative">
-            {/* Mode Switcher Tabs */}
-            <div className="border-b border-[#3A3830] bg-[#1F1E17] px-4 py-2 flex items-center justify-between font-mono text-xs z-20">
-              <span className="text-[#8C897C] font-semibold uppercase tracking-wider">3D Engine:</span>
-              <div className="flex border border-[#3A3830] divide-x divide-[#3A3830]">
-                <button
-                  type="button"
-                  onClick={() => setEngineMode('unity')}
-                  className={`px-3 py-1 transition-colors cursor-pointer ${
-                    engineMode === 'unity'
-                      ? 'bg-[#C98A3D] text-[#14140F] font-bold'
-                      : 'text-[#8C897C] hover:text-[#EDE8DD]'
-                  }`}
-                >
-                  Unity WebGL (Live)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEngineMode('three')}
-                  className={`px-3 py-1 transition-colors cursor-pointer ${
-                    engineMode === 'three'
-                      ? 'bg-[#C98A3D] text-[#14140F] font-bold'
-                      : 'text-[#8C897C] hover:text-[#EDE8DD]'
-                  }`}
-                >
-                  Three.js Fallback
-                </button>
-              </div>
-            </div>
-
             <div className="flex-1 flex flex-col min-h-0 relative">
-              {engineMode === 'unity' ? (
-                <UnityContainer
-                  growthScale={growthScale}
-                  predictedYieldMaundAcre={prediction?.predicted_yield_maund_acre ?? null}
-                />
-              ) : (
-                <CanvasContainer growthScale={growthScale ?? 0.75} />
-              )}
+              <UnityContainer
+                growthScale={growthScale}
+                predictedYieldMaundAcre={prediction?.predicted_yield_maund_acre ?? null}
+              />
             </div>
           </div>
         </div>
