@@ -147,12 +147,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </span>
             <div>
               <div className="text-2xl sm:text-3xl font-bold font-mono text-[#EDE8DD] leading-none">
-                {prediction.district_benchmark_maund_acre?.toFixed(2) || '35.75'}
+                {prediction.district_benchmark_maund_acre !== undefined
+                  ? prediction.district_benchmark_maund_acre.toFixed(2)
+                  : (prediction.district_benchmark_t_ha ? (prediction.district_benchmark_t_ha * 10.12).toFixed(2) : '35.75')}
               </div>
               <div className="text-xs text-[#A8A598] font-mono font-semibold mt-1">maund/acre</div>
             </div>
             <div className="text-xs sm:text-sm text-[#A8A598] font-mono pt-1.5 border-t border-[#26251D]">
-              {prediction.district_benchmark_t_ha?.toFixed(2) || '3.53'} t/ha
+              {prediction.district_benchmark_t_ha !== undefined
+                ? `${prediction.district_benchmark_t_ha.toFixed(2)} t/ha`
+                : (prediction.district_benchmark_maund_acre ? `${(prediction.district_benchmark_maund_acre / 10.12).toFixed(2)} t/ha` : '3.53 t/ha')}
             </div>
           </div>
 
@@ -163,12 +167,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </span>
             <div>
               <div className="text-2xl sm:text-3xl font-bold font-mono text-[#EDE8DD] leading-none">
-                {prediction.baseline_yield_maund_acre?.toFixed(2) || '37.23'}
+                {prediction.baseline_yield_maund_acre !== undefined
+                  ? prediction.baseline_yield_maund_acre.toFixed(2)
+                  : (prediction.baseline_yield_t_ha ? (prediction.baseline_yield_t_ha * 10.12).toFixed(2) : '37.23')}
               </div>
               <div className="text-xs text-[#A8A598] font-mono font-semibold mt-1">maund/acre</div>
             </div>
             <div className="text-xs sm:text-sm text-[#A8A598] font-mono pt-1.5 border-t border-[#26251D]">
-              {prediction.baseline_yield_t_ha?.toFixed(2) || '3.68'} t/ha
+              {prediction.baseline_yield_t_ha !== undefined
+                ? `${prediction.baseline_yield_t_ha.toFixed(2)} t/ha`
+                : (prediction.baseline_yield_maund_acre ? `${(prediction.baseline_yield_maund_acre / 10.12).toFixed(2)} t/ha` : '3.68 t/ha')}
             </div>
           </div>
         </div>

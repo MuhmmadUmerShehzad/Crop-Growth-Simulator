@@ -6,7 +6,7 @@ import { DISTRICT_CLIMATE, CROP_METADATA, CROP_DISTRICT_AVG_YIELD } from '../dat
  */
 const API_BASE_URL = import.meta.env.DEV
   ? '/api'
-  : (import.meta.env.VITE_API_BASE_URL || 'https://web-production-03afe.up.railway.app').replace(/\/+$/, '');
+  : (import.meta.env.VITE_API_BASE_URL || 'https://hackathonapi-production-cb60.up.railway.app').replace(/\/+$/, '');
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 
@@ -48,6 +48,9 @@ export async function getYieldPrediction(inputs: PredictionInputs): Promise<Pred
       cultivar: inputs.crop_variety || 'Standard Variety',
     };
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     try {
       const response = await fetch(`${API_BASE_URL}/simulate`, {
         method: 'POST',
@@ -56,7 +59,9 @@ export async function getYieldPrediction(inputs: PredictionInputs): Promise<Pred
           'Accept': 'application/json',
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         let errorMessage = `API Error (${response.status}): ${response.statusText}`;
@@ -131,43 +136,80 @@ export async function getYieldPrediction(inputs: PredictionInputs): Promise<Pred
         advice: rawData.advice || (Array.isArray(rawData.recommendations) && rawData.recommendations.length > 0 ? rawData.recommendations[0] : undefined),
       };
     } catch (networkError) {
-      console.warn('Live API request failed, falling back to local simulation:', networkError);
+      clearTimeout(timeoutId);
+      console.warn('Live API request failed or timed out, falling back to local simulation:', networkError);
     }
   }
 
   // --- LOCAL FALLBACK ENGINE WITH GROUND TRUTH BENCHMARKS ---
   return new Promise<PredictionResponse>((resolve) => {
     setTimeout(() => {
-      let baselineYield = historicalBaseline;
-      let percentIncrease = 12.5;
-      const drivers: string[] = [];
+      // Historical regional benchmark for this crop in this district
+      const districtBenchmarkTonnes = parseFloat(historicalBaseline.toFixed(2));
+      const districtBenchmarkMaund = parseFloat((districtBenchmarkTonnes * 10.12).toFixed(2));
 
-      drivers.push(`Phenology model projection for ${cropName} in ${districtName}`);
-      drivers.push(`Fertilizer protocol: ${inputs.fertilizer_type}`);
-      drivers.push(`District ground baseline: ${historicalBaseline.toFixed(2)} t/ha`);
+      // Fertilizer effect calculation based on protocol
+      let fertGainTonnes = 0.32;
+      let fertGainMaund = 3.24;
+      if (inputs.fertilizer_type?.includes('Balanced NPK') || inputs.fertilizer_type?.includes('Compound')) {
+        fertGainTonnes = 0.38;
+        fertGainMaund = 3.85;
+      } else if (inputs.fertilizer_type?.includes('High Nitrogen')) {
+        fertGainTonnes = 0.30;
+        fertGainMaund = 3.04;
+      } else if (inputs.fertilizer_type?.includes('Control') || inputs.fertilizer_type?.includes('No Fertilizer')) {
+        fertGainTonnes = 0.0;
+        fertGainMaund = 0.0;
+      }
 
-      const predicted_yield = parseFloat(baselineYield.toFixed(2));
+      // Variety genetic modifier
+      let varietyBonusTonnes = 0.0;
+      if (inputs.crop_variety && !inputs.crop_variety.includes('Standard')) {
+        varietyBonusTonnes = 0.15;
+      }
+
+      // Baseline yield (unamended control)
+      const baselineYieldTonnes = parseFloat(Math.max(0.5, districtBenchmarkTonnes * 0.92).toFixed(2));
+      const baselineYieldMaund = parseFloat((baselineYieldTonnes * 10.12).toFixed(2));
+
+      // Final Predicted yield = baseline + fertilizer gain + variety bonus
+      const predicted_yield = parseFloat((baselineYieldTonnes + fertGainTonnes + varietyBonusTonnes).toFixed(2));
       const predicted_yield_maund_acre = parseFloat((predicted_yield * 10.12).toFixed(2));
-      const district_benchmark_maund_acre = parseFloat((historicalBaseline * 10.12).toFixed(2));
-      const confidence_low = parseFloat(Math.max(1.0, predicted_yield - 0.35).toFixed(2));
-      const confidence_high = parseFloat((predicted_yield + 0.45).toFixed(2));
-      const percent_increase = parseFloat(percentIncrease.toFixed(1));
-      const growth_scale = 0.85;
+
+      const deltaVsBenchmarkPct = parseFloat((((predicted_yield - districtBenchmarkTonnes) / districtBenchmarkTonnes) * 100).toFixed(1));
+      const confidence_low = parseFloat(Math.max(0.2, predicted_yield * 0.92).toFixed(2));
+      const confidence_high = parseFloat((predicted_yield * 1.08).toFixed(2));
+      // Growth scale (normalized 0.0 - 1.0)
+      // Positive yield delta (> benchmark) drives healthy model (> 0.75), negative drives stunted (< 0.5)
+      const isHealthy = deltaVsBenchmarkPct >= 0;
+      const growth_scale = isHealthy
+        ? Math.min(1.0, Math.max(0.75, parseFloat((0.80 + (deltaVsBenchmarkPct / 100) * 0.20).toFixed(2))))
+        : Math.max(0.20, Math.min(0.50, parseFloat((0.45 + (deltaVsBenchmarkPct / 100) * 0.25).toFixed(2))));
+
+      const drivers: string[] = [
+        `Fertilizer regimen (${inputs.fertilizer_type || 'Balanced NPK'}) net impact: +${fertGainMaund.toFixed(2)} maund/acre (+${fertGainTonnes.toFixed(2)} t/ha)`,
+        `District ground-truth benchmark for ${cropName} in ${districtName}: ${districtBenchmarkMaund.toFixed(2)} maund/acre (${districtBenchmarkTonnes.toFixed(2)} t/ha)`,
+        `Local soil telemetry: ${districtClimate.soil} at ${districtClimate.tempC}°C avg with ${districtClimate.rainMm}mm rainfall`
+      ];
 
       resolve({
         predicted_yield,
         predicted_yield_maund_acre,
-        baseline_yield_maund_acre: district_benchmark_maund_acre,
-        fertilizer_effect_maund_acre: 3.2,
-        district_benchmark_maund_acre,
-        yield_vs_benchmark_pct: percent_increase,
-        percent_increase,
+        baseline_yield_maund_acre: baselineYieldMaund,
+        baseline_yield_t_ha: baselineYieldTonnes,
+        fertilizer_effect_maund_acre: fertGainMaund,
+        fertilizer_effect_t_ha: fertGainTonnes,
+        district_benchmark_maund_acre: districtBenchmarkMaund,
+        district_benchmark_t_ha: districtBenchmarkTonnes,
+        yield_vs_benchmark_pct: deltaVsBenchmarkPct,
+        percent_increase: deltaVsBenchmarkPct,
         confidence_low,
         confidence_high,
         growth_scale,
-        top_drivers: drivers.slice(0, 3),
-        advice: `Soil moisture (${districtClimate.moisture}%) and nutrient regimen are within optimal thresholds for ${cropName}.`,
+        top_drivers: drivers,
+        fertilizer_description: `${inputs.fertilizer_type || 'Balanced NPK (15-15-15)'}`,
+        advice: `Soil moisture (${districtClimate.moisture}%) and nutrient regimen are within target agronomic parameters for ${cropName} in ${districtName}.`,
       });
-    }, 500);
+    }, 400);
   });
 }

@@ -41,7 +41,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://web-production-03afe.up.railway.app',
+        target: 'https://hackathonapi-production-cb60.up.railway.app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
