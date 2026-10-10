@@ -1,0 +1,25 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Set proper MIME types for Unity WebGL binary assets
+[[headers]]
+  for = "/unitybuild/*.wasm.unityweb"
+  [headers.values]
+    Content-Type = "application/wasm"
+
+[[headers]]
+  for = "/unitybuild/*.framework.js.unityweb"
+  [headers.values]
+    Content-Type = "application/javascript"
+
+[[headers]]
+  for = "/unitybuild/*.data.unityweb"
+  [headers.values]
+    Content-Type = "application/octet-stream"
+
+# SPA Fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
